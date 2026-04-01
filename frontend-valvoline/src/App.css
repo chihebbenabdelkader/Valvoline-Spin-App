@@ -1,0 +1,171 @@
+/* #root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+} */
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 15s linear infinite;
+}
+
+/* لظهور الـ Form بسلاسة من لوطا */
+.animate-slide-up {
+  animation: slide-up 0.4s ease-out;
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+.spinning-active {
+  transition: transform 5s cubic-bezier(0.1, 0.7, 0.1, 1);
+}
+/* Animation للـ Valvoline (نبض خفيف) */
+@keyframes logo-pulse {
+  0% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 0px rgba(255, 255, 255, 0));
+  }
+
+  50% {
+    transform: scale(1.05);
+    filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.4));
+  }
+
+  100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 0px rgba(255, 255, 255, 0));
+  }
+}
+
+/* Animation للـ Afrilub (طلوع وهبوط خفيف) */
+@keyframes logo-float {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.animate-valvoline {
+  animation: logo-pulse 3s ease-in-out infinite;
+}
+
+.animate-afrilub {
+  animation: logo-float 4s ease-in-out infinite;
+}
+
+.main-landing {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  /* حط التصويرة في public/assets وسميها background.png */
+  background-image: url('/assets/background.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-hidden: hidden;
+}
+
+/* نزيدو طبقة غامقة خفيفة ياسر باش الـ UI يظهر "Pop" */
+.main-landing::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.15);
+  /* تظليل خفيف جداً */
+  z-index: 1;
+}
+
+.z-top {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* الكلاس الجديدة للخلفية */
+.main-bg-layout {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  /* تأكد إن التصويرة إسمها background.jpg وموجودة في public/assets */
+  background-image: url('/assets/background.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* طبقة تظليل خفيفة باش تبرز الكتيبة واللوغوات */
+.main-bg-layout::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.1);
+  /* تظليل خفيف جداً */
+  z-index: 0;
+}
+
