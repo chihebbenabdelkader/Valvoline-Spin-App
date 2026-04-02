@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es2015", // 👈 بدلنا هذي من es5 لـ es2015
     "lib": [
       "dom",
       "dom.iterable",
@@ -13,8 +13,7 @@
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
+    "moduleResolution": "bundler", // 👈 هذا هو البديل الصحيح لـ Next.js و Vite    "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
@@ -27,14 +26,16 @@
       "@/*": [
         "./*"
       ]
-    }
+    },
+    "resolveJsonModule": true
   },
   "include": [
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts"
-, "app/(main)/roueSettings/page.jsx"  ],
+    ".next/types/**/*.ts",
+    "app/(main)/roueSettings/page.jsx"
+  ],
   "exclude": [
     "node_modules"
   ]

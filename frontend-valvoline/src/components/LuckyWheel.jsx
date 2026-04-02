@@ -1,7 +1,8 @@
 import Swal from "sweetalert2";
 import { spinService } from "../services/api"; // تأكد من المسار
 import backgroundImage from "../assets/background.png"; // تأكد من المسار
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import wheelFrame from "../assets/wheel-frame.png"; // 👈 استورد تصويرة الإطار هنا
 
 const LuckyWheel = ({ userData, onFinished }) => {
   const [isSpinning, setIsSpinning] = useState(false);
@@ -9,102 +10,143 @@ const LuckyWheel = ({ userData, onFinished }) => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 1. جلب الهدايا من الباكاند
+  const spinAudio = useRef(null);
+  const winAudio = useRef(null);
+
   useEffect(() => {
+    spinAudio.current = new Audio("/sounds/spinning.mp3");
+    winAudio.current = new Audio("/sounds/win.mp3");
+    if (spinAudio.current) spinAudio.current.volume = 0.6;
+    if (winAudio.current) winAudio.current.volume = 0.8;
+
     const fetchPrizes = async () => {
       try {
         const response = await fetch("http://localhost:5000/api/prizes");
         const data = await response.json();
+      if (data.success) {
+        const allPrizes = data.data;
+        let formattedPrizes = [];
 
-        if (data.success) {
-const allPrizes = data.data;
-          let formattedPrizes = [];
+        allPrizes.forEach((prize) => {
+          const prizeColor = prize.stockInitial === 1 ? "#cd9a46" : "#ee2a24";
 
-         allPrizes.forEach((prize) => {
-           const prizeColor = prize.stockInitial === 1 ? "#cd9a46" : "#ee2a24";
-           // 1. الكادو الأصلي (أحمر)
-           formattedPrizes.push({
-             id: prize._id,
-             name: prize.name,
-             image: prize.image,
-             color: prizeColor, // أحمر
-             stockRestant: prize.stockRestant, // 👈 سجلنا الستوك باش نستحقوه في الدوران
-           });
+          // نزيدو الكادو ديما (حتى لو prize.stockRestant === 0)
+          formattedPrizes.push({
+            id: prize._id,
+            name: prize.name,
+            image: prize.image,
+            color: prizeColor,
+            stockRestant: prize.stockRestant, // الـ stockRestant الذكي من الباكاند
+          });
 
-           // خانة Tirage au sort (أزرق)
-           formattedPrizes.push({
-             id: `tirage-${prize._id}`,
-             name: "tirage au sort",
-             image: null,
-             color: "#0092d0",
-             stockRestant: 99999, // 👈 التیراج ديما فيه ستوك لا نهائي باش ديما تنجم تطيح فيه
-           });
-         });
-
-       
-
-          setItems(formattedPrizes);
-        }
+          // نزيدو الـ Tirage ديما
+          formattedPrizes.push({
+            id: `tirage-${prize._id}`,
+            name: "tirage au sort",
+            image: null,
+            color: "#0092d0",
+            stockRestant: 99999,
+          });
+        });
+        setItems(formattedPrizes);
+      }
       } catch (error) {
-        console.error("Erreur de chargement des cadeaux:", error);
+        console.error("Erreur:", error);
       } finally {
         setLoading(false);
       }
     };
-
     fetchPrizes();
   }, []);
 
   const sliceAngle = items.length > 0 ? 360 / items.length : 0;
 
-  // 2. منطق دوران العجلة والربح
-  const spin = () => {
-    if (isSpinning || items.length === 0) return;
-    const rand = Math.floor(Math.random() * 360);
-    const totalRotation = angle + 360 * 8 + rand;
+const spin = () => {
+  // 1. الحماية المعتادة
+  if (isSpinning || items.length === 0) return;
 
-    setIsSpinning(true);
-    setAngle(totalRotation);
+  // 🔊 تشغيل صوت الدوران
+  if (spinAudio.current) {
+    spinAudio.current.currentTime = 0;
+    spinAudio.current.loop = true;
+    spinAudio.current.play().catch((e) => console.log("Audio play blocked",e));
+  }
 
-    const actualAngle = (360 - (totalRotation % 360)) % 360;
-    const winnerIdx = Math.floor(actualAngle / sliceAngle);
-    const winner = items[winnerIdx];
+  // 2. نختاروا زاوية عشوائية مبدئية (هذي اللي كانت باش تاقف فيها العجلة)
+  let rand = Math.floor(Math.random() * 360);
 
-    setTimeout(async () => {
-      setIsSpinning(false);
-      try {
-        // 👈 التغيير هنا: زدنا giftId: winner.id 
-        await spinService.submitSpin({ 
-            ...userData, 
-            giftName: winner.name, 
-            giftId: winner.id 
-        });
-      } catch (e) {
-        console.error(e);
-      }
+  // 3. نحسبوا شكون "الرابح المبدئي" حسب الزاوية rand
+  const actualAngle = (360 - (rand % 360)) % 360;
+  const winnerIdx = Math.floor(actualAngle / sliceAngle);
+  const initialWinner = items[winnerIdx];
 
-      Swal.fire({
-        title: "🎉 مبروك ربحت!",
-        html: `<b style="font-size: 24px; color: ${winner.color};">${winner.name}</b>`,
-        icon: "success",
-        confirmButtonColor: "#E11D48",
-      }).then(onFinished);
-    }, 5000);
-  };
+  let finalStopAngle = rand;
+
+  // 🚨 4. اللوجيك الذكي (التحويل للـ Tirage)
+  if (initialWinner.isAvailable === false) {
+    console.log(
+      "🚫 الكادو موجود أما 'ممنوع' يخرج توّة (وقت/تاريخ/ماكس). تحويل للـ Tirage...",
+    );
+
+    // الخانة اللي بعدها ديما هي الـ Tirage au sort (حسب الـ formattedPrizes متاعنا)
+    const nextIdx = (winnerIdx + 1) % items.length;
+
+    // نحسبوا السنتر متاع خانة الـ Tirage au sort بالظبط
+    const targetMidAngle = nextIdx * sliceAngle + sliceAngle / 2;
+
+    // نصلحو الـ finalStopAngle باش السهم يجي في الـ Tirage
+    finalStopAngle = (360 - targetMidAngle) % 360;
+  }
+
+  // 5. الحسبة النهائية للدوران (8 دورات كاملة + الزاوية المصلحة)
+  const totalRotation =
+    angle + 360 * 8 + ((finalStopAngle - (angle % 360) + 360) % 360);
+
+  setIsSpinning(true);
+  setAngle(totalRotation);
+
+  // 6. تحديد الرابح النهائي (اللي باش نبعثوه للباكاند)
+  const finalActualAngle = (360 - (totalRotation % 360)) % 360;
+  const finalWinnerIdx = Math.floor(finalActualAngle / sliceAngle);
+  const winner = items[finalWinnerIdx];
+
+  // 7. الـ Timer متاع الـ 5 ثواني (وقت الـ Animation)
+  setTimeout(async () => {
+    setIsSpinning(false);
+    if (spinAudio.current) {
+      spinAudio.current.pause();
+      spinAudio.current.currentTime = 0;
+    }
+    if (winAudio.current) winAudio.current.play();
+
+    try {
+      // نبعثوا الرابح النهائي (اللي هو الـ Tirage في حالة المنع)
+      await spinService.submitSpin({
+        ...userData,
+        giftName: winner.name,
+        giftId: winner.id,
+      });
+    } catch (err) {
+      console.error("Error submitting spin:", err);
+    }
+
+    Swal.fire({
+      title:
+        winner.name === "tirage au sort"
+          ? "🎯 Tirage au Sort !"
+          : "🎉 مبروك ربحت!",
+      html: `<b style="font-size: 24px; color: ${winner.color};">${winner.name}</b>`,
+      icon: winner.name === "tirage au sort" ? "info" : "success",
+      confirmButtonColor: "#29a849",
+    }).then(onFinished);
+  }, 5000);
+}; 
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen w-full bg-black/80 text-white font-bold text-2xl">
         <i className="pi pi-spin pi-spinner text-5xl mb-4 text-[#E11D48]"></i>
         جاري تحميل الهدايا...
-      </div>
-    );
-  }
-
-  if (items.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen w-full bg-black/80 text-white font-bold text-3xl">
-        عذراً، انتهت الهدايا حالياً! 😔
       </div>
     );
   }
@@ -121,18 +163,27 @@ const allPrizes = data.data;
       <div className="absolute inset-0 bg-black/40 z-0"></div>
 
       <div className="relative z-10 flex flex-col items-center w-full max-w-4xl px-4">
+        {/* Container الرئيسي للعجلة */}
         <div className="relative mb-8 mt-4">
-          {/* السهم الذهبي (مستعملين Tailwind) */}
+          {/* 1. السهم الذهبي (ثابت فوق الكل) */}
           <div
-            className="absolute -top-6 left-1/2 -translate-x-1/2 z-50 w-0 h-0 
+            className="absolute -top-6 left-1/2 -translate-x-1/2 z-[60] w-0 h-0 
                        border-l-[25px] border-l-transparent border-r-[25px] border-r-transparent 
                        border-t-[40px] border-t-[#D4AF37] drop-shadow-xl"
           ></div>
 
+          {/* 2. الإطار الذهبي (الـ Contour اللي زدتوه) - ثابت لا يدور */}
+          <img
+            src={wheelFrame}
+            alt="Wheel Contour"
+            className="absolute top-0 left-0 w-full h-full z-50 pointer-events-none scale-[1.03]"
+            /* 💡 استعملنا scale[1.03] باش يجي مغطي حواف الـ SVG بالظبط */
+          />
+
+          {/* 3. العجلة (الـ SVG الأصلي متاعك) - هي اللي تدور */}
           <svg
             viewBox="0 0 400 400"
-            className="w-[320px] h-[320px] md:w-[450px] md:h-[450px] rounded-full border-[12px] border-[#D4AF37] 
-                       shadow-[0_0_80px_rgba(0,0,0,0.8)] transition-transform duration-[5000ms] ease-out"
+            className="w-[320px] h-[320px] md:w-[450px] md:h-[450px] rounded-full transition-transform duration-[5000ms] ease-out z-40"
             style={{ transform: `rotate(${angle}deg)` }}
           >
             {items.map((item, i) => {
@@ -147,7 +198,6 @@ const allPrizes = data.data;
               const y2 =
                 200 + 200 * Math.sin(((endAngle - 90) * Math.PI) / 180);
               const largeArcFlag = sliceAngle > 180 ? 1 : 0;
-
               const midAngle = (startAngle + endAngle) / 2 - 90;
               let normalizedAngle = midAngle % 360;
               if (normalizedAngle < 0) normalizedAngle += 360;
@@ -155,8 +205,6 @@ const allPrizes = data.data;
 
               const words = item.name.split(" ");
               let formattedLines = [item.name];
-
-              // تقسيم الكتيبة
               if (
                 item.name.toLowerCase() !== "tirage au sort" &&
                 item.name.length > 14 &&
@@ -173,18 +221,17 @@ const allPrizes = data.data;
                 }
               }
 
-              const textDist = item.image ? 300 : 290;
-              const imageDist = 370;
+              const textDist = item.image ? 292 : 290;
+              const imageDist = 360;
 
               return (
                 <g key={i}>
                   <path
                     d={`M 200 200 L ${x1} ${y1} A 200 200 0 ${largeArcFlag} 1 ${x2} ${y2} Z`}
                     fill={item.color}
-                    stroke="#D4AF37"
-                    strokeWidth="3"
+                    stroke="rgba(255,255,255,0.1)" /* نقصنا في الـ stroke باش ما يفسدش الديزاين الجديد */
+                    strokeWidth="1"
                   />
-
                   <g transform={`rotate(${midAngle}, 200, 200)`}>
                     {item.image && (
                       <image
@@ -199,7 +246,6 @@ const allPrizes = data.data;
                         }
                       />
                     )}
-
                     <text
                       x={textDist}
                       y="200"
@@ -239,7 +285,6 @@ const allPrizes = data.data;
               stroke="white"
               strokeWidth="3"
             />
-
             <defs>
               <radialGradient id="goldGradient" cx="50%" cy="50%" r="50%">
                 <stop offset="0%" stopColor="#FDE08B" />
@@ -254,12 +299,12 @@ const allPrizes = data.data;
           disabled={isSpinning || items.length === 0}
           className="bg-[#E11D48] text-white font-black py-4 px-16 md:py-5 md:px-20 rounded-full text-2xl md:text-3xl 
                      shadow-[0_15px_40px_rgba(0,0,0,0.4)] hover:scale-105 active:scale-95 
-                     transition-all border-4 border-white uppercase italic mt-6"
+                     transition-all border-4 border-white uppercase italic mt-6 z-20"
         >
           {isSpinning ? "قاعدين ندوروا..." : "إضغط للربح!"}
         </button>
 
-        <p className="mt-6 md:mt-8 text-white/80 font-bold tracking-widest text-sm uppercase drop-shadow-md">
+        <p className="mt-6 md:mt-8 text-white/80 font-bold tracking-widest text-sm uppercase drop-shadow-md z-20">
           VALVOLINE X AFRILUB
         </p>
       </div>

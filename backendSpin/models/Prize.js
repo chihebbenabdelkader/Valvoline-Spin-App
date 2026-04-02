@@ -5,12 +5,12 @@ const prizeSchema = new mongoose.Schema(
     name: { type: String, required: true },
     image: { type: String, required: false },
     stockInitial: { type: Number, required: true, default: 0 },
-    stockRestant: { type: Number, required: true, default: 0 }, // 👈 Zidna hedhi
-    // ⬇️ الحوايج الجدد متع اللوجيك الذكي ⬇️
-    maxParJour: { type: Number, default: null }, // قداش ماكسيموم يخرجو في النهار (كان null معناها ما فماش ليميت)
-    heureDebut: { type: String, default: null }, // وقت البداية (مثال: "14:00")
-    heureFin: { type: String, default: null }, // وقت النهاية (مثال: "18:00")
-    dateSpecifique: { type: String, default: null }, // نهار معين (مثال: "2026-04-15" - للكادو الكبير)
+    stockRestant: { type: Number, required: true, default: 0 },
+    maxParJour: { type: Number, default: null },
+    heureDebut: { type: String, default: null },
+    heureFin: { type: String, default: null },
+    // 👈 رديناه Array باش ياخذ برشا تواريخ
+    dateSpecifique: { type: [String], default: [] },
   },
   { timestamps: true },
 );

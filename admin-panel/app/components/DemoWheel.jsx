@@ -13,12 +13,11 @@ const DemoWheel = () => {
                 const data = await PrizeService.getPrizes();
 
                 if (data.success) {
-                    const availablePrizes = data.data.filter((p) => p.stockRestant > 0);
-
+                   const allPrizes = data.data;
                     let formattedPrizes = [];
 
                     // 👈 التغيير هنا: نزيدو الكادو بالاحمر، وراه ديركت "Tirage" بالازرق
-                    availablePrizes.forEach((prize) => {
+                    allPrizes.forEach((prize) => {
                         const prizeColor = prize.stockInitial === 1 ? '#cd9a46' : '#ee2a24';
                         // 1. الكادو الأصلي (أحمر)
                         formattedPrizes.push({
@@ -37,10 +36,6 @@ const DemoWheel = () => {
                         });
                     });
 
-                    // باش العجلة ديما تظهر معبية كان الكادوات شوية (أقل من 6 خانات)
-                    while (formattedPrizes.length > 0 && formattedPrizes.length < 6) {
-                        formattedPrizes = [...formattedPrizes, ...formattedPrizes];
-                    }
 
                     setItems(formattedPrizes);
                 }

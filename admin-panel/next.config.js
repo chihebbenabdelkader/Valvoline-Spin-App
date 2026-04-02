@@ -1,4 +1,11 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {}
+const nextConfig = {
+    webpackDevMiddleware: (config) => {
+        config.watchOptions = {
+            ignored: ['**/uploads/**', '**/public/uploads/**']
+        };
+        return config;
+    }
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;
