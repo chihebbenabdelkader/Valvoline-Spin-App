@@ -7,7 +7,52 @@ const RegistrationForm = ({ isOpen, onClose, onRegisterSuccess }) => {
     magasin: "",
     ville: "",
   });
+  // قائمة الولايات
+  const WILAYET = [
+    "تونس",
+    "أريانة",
+    "بن عروس",
+    "منوبة",
+    "نابل",
+    "زغوان",
+    "بنزرت",
+    "باجة",
+    "جندوبة",
+    "الكاف",
+    "سليانة",
+    "سوسة",
+    "المنستير",
+    "المهدية",
+    "صفاقس",
+    "القيروان",
+    "القصرين",
+    "سيدي بوزيد",
+    "قابس",
+    "مدنين",
+    "تطاوين",
+    "قفصة",
+    "توزر",
+    "قبلي",
+  ];
 
+  // داخل الكومبوننت زد هذين الـ state:
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // زد هذا الـ useEffect باش يسكر لما تنقر برا:
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, []);
   const [socialCheck, setSocialCheck] = useState({
     facebook: false,
     instagram: false,
@@ -201,20 +246,66 @@ const RegistrationForm = ({ isOpen, onClose, onRegisterSuccess }) => {
           </div>
 
           {/* الولاية */}
-          <div>
-            <input
-              type="text"
-              name="ville"
-              value={formData.ville}
-              onChange={handleChange}
-              onFocus={handleFocus}
-              placeholder="الولاية"
-              className={`w-full p-4 bg-gray-100 rounded-2xl text-right outline-none text-[16px] transition-all ${
+          {/* الولاية - Custom Dropdown */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              type="button"
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              className={`w-full p-4 bg-gray-100 rounded-2xl text-right outline-none text-[16px] transition-all flex items-center justify-between ${
                 errors.ville
-                  ? "ring-2 ring-red-500"
-                  : "focus:ring-2 focus:ring-red-500"
+                  ? "ring-2 ring-red-500 bg-red-50"
+                  : dropdownOpen
+                    ? "ring-2 ring-red-500"
+                    : ""
               }`}
-            />
+            >
+              <span
+                className={
+                  formData.ville ? "text-black font-bold" : "text-gray-400"
+                }
+              >
+                {formData.ville || "الولاية"}
+              </span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className={`h-5 w-5 text-gray-400 transition-transform duration-300 ${dropdownOpen ? "rotate-180" : ""}`}
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+
+            {/* القائمة */}
+            {dropdownOpen && (
+              <div className="absolute z-50 w-full mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
+                <div className="max-h-52 overflow-y-auto overscroll-contain">
+                  {WILAYET.map((w) => (
+                    <button
+                      key={w}
+                      type="button"
+                      onClick={() => {
+                        setFormData({ ...formData, ville: w });
+                        setDropdownOpen(false);
+                        if (errors.ville) setErrors({ ...errors, ville: "" });
+                      }}
+                      className={`w-full text-right px-5 py-3 text-[15px] transition-all active:scale-95 ${
+                        formData.ville === w
+                          ? "bg-red-50 text-[#E11D48] font-black"
+                          : "text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      {w}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {errors.ville && (
               <p className="text-red-500 text-xs mt-1 pr-2 font-bold">
                 {errors.ville}
@@ -297,6 +388,6 @@ const RegistrationForm = ({ isOpen, onClose, onRegisterSuccess }) => {
       </div>
     </div>
   );
-};
+};;
 
 export default RegistrationForm;
