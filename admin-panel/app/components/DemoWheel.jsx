@@ -78,10 +78,10 @@ const DemoWheel = () => {
                 <div
                     style={{
                         position: 'absolute',
-                        top: '-20px',
+                        top: '-15px',
                         left: '50%',
                         transform: 'translateX(-50%)',
-                        zIndex: 50,
+                        zIndex: 60,
                         width: 0,
                         height: 0,
                         borderLeft: '20px solid transparent',
@@ -90,6 +90,20 @@ const DemoWheel = () => {
                         filter: 'drop-shadow(0px 4px 5px rgba(0,0,0,0.4))'
                     }}
                 ></div>
+                <img
+                    src="/layout/images/wheel-frame.png"
+                    alt="Frame"
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        zIndex: 55,
+                        pointerEvents: 'none',
+                        transform: 'scale(1.03)'
+                    }}
+                />
 
                 <svg
                     viewBox="0 0 400 400"

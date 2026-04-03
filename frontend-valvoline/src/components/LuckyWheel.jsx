@@ -37,6 +37,7 @@ const LuckyWheel = ({ userData, onFinished }) => {
             image: prize.image,
             color: prizeColor,
             stockRestant: prize.stockRestant, // الـ stockRestant الذكي من الباكاند
+            isAvailable: prize.isAvailable, // 👈 زيد هذي ضروري جداً
           });
 
           // نزيدو الـ Tirage ديما
@@ -69,7 +70,7 @@ const spin = () => {
   if (spinAudio.current) {
     spinAudio.current.currentTime = 0;
     spinAudio.current.loop = true;
-    spinAudio.current.play().catch((e) => console.log("Audio play blocked",e));
+    spinAudio.current.play().catch((e) => console.log("Audio play blocked", e));
   }
 
   // 2. نختاروا زاوية عشوائية مبدئية (هذي اللي كانت باش تاقف فيها العجلة)
@@ -113,14 +114,19 @@ const spin = () => {
   // 7. الـ Timer متاع الـ 5 ثواني (وقت الـ Animation)
   setTimeout(async () => {
     setIsSpinning(false);
+
     if (spinAudio.current) {
       spinAudio.current.pause();
       spinAudio.current.currentTime = 0;
     }
-    if (winAudio.current) winAudio.current.play();
+
+    if (winAudio.current) {
+      winAudio.current.currentTime = 0;
+      winAudio.current.load(); // 👈 نضمنوا إنو الـ Buffer تعبّى
+      winAudio.current.play().catch((e) => console.log("Win audio error", e));
+    }
 
     try {
-      // نبعثوا الرابح النهائي (اللي هو الـ Tirage في حالة المنع)
       await spinService.submitSpin({
         ...userData,
         giftName: winner.name,
@@ -130,17 +136,58 @@ const spin = () => {
       console.error("Error submitting spin:", err);
     }
 
+    // 🎯 تحضير الميساج حسب النتيجة (Tirage أو كادو)
+    const isTirage = winner.name.toLowerCase() === "tirage au sort";
+
+    // نجبدو اسم المشارك (ثبّت كان عندك firstName و lastName في الـ userData)
+    const participantName =
+      `${userData.nom || ""} `.trim();
+
     Swal.fire({
-      title:
-        winner.name === "tirage au sort"
-          ? "🎯 Tirage au Sort !"
-          : "🎉 مبروك ربحت!",
-      html: `<b style="font-size: 24px; color: ${winner.color};">${winner.name}</b>`,
-      icon: winner.name === "tirage au sort" ? "info" : "success",
+      title: "",
+      html: `
+        <div style="direction: rtl; font-family: 'Cairo', sans-serif; padding: 10px;">
+          
+          <h2 style="color: #E11D48; font-size: 32px; font-weight: 900; margin-bottom: 5px;">
+            🎉 مبروك ${participantName} !
+          </h2>
+
+          <p style="font-size: 18px; color: #444; font-weight: 600; margin-bottom: 20px;">
+            ${isTirage ? "دخلت معانا في القرعة الكبيرة" : "ربحت معانا هدية مميزة"}
+          </p>
+
+          <div style="
+            background: linear-gradient(145deg, #ffffff, #f0f0f0);
+            padding: 20px;
+            border-radius: 20px;
+            border: 3px solid ${winner.color};
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            display: inline-block;
+            min-width: 80%;
+          ">
+            <span style="
+              font-size: 26px; 
+              color: ${winner.color}; 
+              font-weight: 900; 
+              text-transform: uppercase;
+              letter-spacing: 1px;
+            ">
+              ${winner.name}
+            </span>
+          </div>
+
+        </div>
+      `,
+      icon: isTirage ? "info" : "success",
+      confirmButtonText: "موافق",
       confirmButtonColor: "#29a849",
+      background: "#fff",
+      customClass: {
+        popup: "rounded-3xl shadow-2xl",
+      },
     }).then(onFinished);
   }, 5000);
-}; 
+};; 
 
   if (loading) {
     return (

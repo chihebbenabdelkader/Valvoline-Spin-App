@@ -45,8 +45,16 @@ export default function SettingsPage() {
       }
   };
    useEffect(() => {
-       setLoading(true); // نخدمو الـ loading مرة برك في البداية
-       fetchPrizes();
+       setLoading(true);
+       fetchPrizes(); // أول fetch في البداية
+
+       // 🕒 Timer يعاود يجيب الداتا كل دقيقة (60000ms)
+       // باش الـ Status Actuel يتبدل وحدو كيف يجي الوقت
+       const interval = setInterval(() => {
+           fetchPrizes();
+       }, 60000);
+
+       return () => clearInterval(interval); // تنظيف الـ Timer كي تخرج م الصفحة
    }, []);
 
     const openNew = () => {

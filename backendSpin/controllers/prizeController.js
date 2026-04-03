@@ -12,13 +12,16 @@ exports.getAllPrizes = async (req, res) => {
       ":" +
       serverTime.getMinutes().toString().padStart(2, "0");
 
-    const currentDateStr = serverTime.toISOString().split("T")[0];
-
+const currentDateStr = serverTime.toLocaleDateString("en-CA", {
+  timeZone: "Africa/Tunis",
+});
     const startOfDay = new Date(serverTime);
     startOfDay.setHours(0, 0, 0, 0);
 
     const endOfDay = new Date(serverTime);
     endOfDay.setHours(23, 59, 59, 999);
+
+    
 
     const smartPrizes = await Promise.all(
       prizes.map(async (p) => {

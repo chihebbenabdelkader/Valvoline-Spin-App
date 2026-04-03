@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 const RegistrationForm = ({ isOpen, onClose, onRegisterSuccess }) => {
   const [formData, setFormData] = useState({
@@ -7,8 +7,38 @@ const RegistrationForm = ({ isOpen, onClose, onRegisterSuccess }) => {
     magasin: "",
     ville: "",
   });
+
+  const [socialCheck, setSocialCheck] = useState({
+    facebook: false,
+    instagram: false,
+  });
+
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const modalRef = useRef(null);
+
+  // ✅ Fix: --vh يتحدث مع الكيبورد
+  useEffect(() => {
+    const setVh = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty("--vh", `${vh}px`);
+    };
+    setVh();
+    window.addEventListener("resize", setVh);
+    return () => window.removeEventListener("resize", setVh);
+  }, []);
+
+  // ✅ Fix: منع scroll الـ body لما الـ modal مفتوح
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
 
   const validate = () => {
     let tempErrors = {};
@@ -18,15 +48,50 @@ const RegistrationForm = ({ isOpen, onClose, onRegisterSuccess }) => {
       tempErrors.telephone = "رقم الهاتف غير صحيح";
     if (!formData.magasin) tempErrors.magasin = "الرجاء إدخال اسم المحل";
     if (!formData.ville) tempErrors.ville = "الرجاء إدخال الولاية";
-
+    if (!socialCheck.facebook || !socialCheck.instagram) {
+      tempErrors.social = "الرجاء متابعتنا على فيسبوك وإنستغرام للمشاركة";
+    }
     setErrors(tempErrors);
     return Object.keys(tempErrors).length === 0;
+  };
+
+  const handleSocialClick = (platform, webUrl) => {
+    setSocialCheck((prev) => ({ ...prev, [platform]: true }));
+    if (errors.social) setErrors({ ...errors, social: "" });
+
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    if (isMobile) {
+      let appUrl =
+        platform === "facebook"
+          ? `fb://facewebmodal/f?href=${webUrl}`
+          : `instagram://user?username=afrilubtunisie`;
+
+      const start = Date.now();
+      window.location.href = appUrl;
+
+      setTimeout(() => {
+        if (Date.now() - start < 2000) {
+          window.open(webUrl, "_blank");
+        }
+      }, 1500);
+    } else {
+      window.open(webUrl, "_blank");
+    }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
     if (errors[name]) setErrors({ ...errors, [name]: "" });
+  };
+
+  // ✅ Fix: scroll للـ input لما يتفوكس (مع delay باش الكيبورد يطلع أول)
+  const handleFocus = (e) => {
+    const target = e.target;
+    setTimeout(() => {
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 300);
   };
 
   const localSubmit = async (e) => {
@@ -36,9 +101,7 @@ const RegistrationForm = ({ isOpen, onClose, onRegisterSuccess }) => {
       try {
         await onRegisterSuccess(formData);
       } catch (error) {
-        // 👈 صلحناها هوني: طبعنا الـ error في الـ console باش يتنحى الـ Warning
         console.error("Erreur d'inscription:", error);
-
         setErrors({
           ...errors,
           telephone: "شاركت معانا قبل، خلي فرصة لغيرك! 😉",
@@ -52,87 +115,181 @@ const RegistrationForm = ({ isOpen, onClose, onRegisterSuccess }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center">
+    <div className="fixed inset-0 bg-black/60 z-[9999] flex items-end justify-center">
+      {/* Overlay */}
       <div className="absolute inset-0" onClick={onClose}></div>
-      <div className="relative bg-white w-full max-w-lg rounded-t-[40px] p-8 animate-slide-up shadow-2xl">
+
+      {/* Modal */}
+      <div
+        ref={modalRef}
+        className="relative bg-white w-full max-w-lg rounded-t-[40px] p-6 md:p-8 animate-slide-up shadow-2xl overflow-y-auto overscroll-contain pb-10"
+        // ✅ Fix الرئيسي: استخدام --vh بدل vh الثابت
+        style={{ maxHeight: "calc(var(--vh, 1vh) * 92)" }}
+      >
+        {/* Handle bar */}
         <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-6"></div>
-        <h2 className="text-[#E11D48] text-2xl font-black text-center mb-8">
+
+        <h2 className="text-[#E11D48] text-2xl font-black text-center mb-6">
           سجل بياناتك للمشاركة
         </h2>
 
         <form className="space-y-4" dir="rtl" onSubmit={localSubmit}>
-          {/* حقل الاسم */}
+          {/* الاسم */}
           <div>
             <input
               type="text"
               name="nom"
               value={formData.nom}
               onChange={handleChange}
+              onFocus={handleFocus}
               placeholder="الاسم و اللقب"
-              className={`w-full p-4 bg-gray-100 border-none rounded-2xl text-right outline-none focus:ring-2 ${errors.nom ? "ring-2 ring-red-500" : "focus:ring-red-500"}`}
+              className={`w-full p-4 bg-gray-100 rounded-2xl text-right outline-none text-[16px] transition-all ${
+                errors.nom
+                  ? "ring-2 ring-red-500 bg-red-50"
+                  : "focus:ring-2 focus:ring-red-500"
+              }`}
             />
             {errors.nom && (
-              <p className="text-red-500 text-sm mt-1 font-bold">
+              <p className="text-red-500 text-xs mt-1 pr-2 font-bold">
                 {errors.nom}
               </p>
             )}
           </div>
 
-          {/* حقل الهاتف */}
+          {/* الهاتف */}
           <div>
             <input
               type="tel"
               name="telephone"
               value={formData.telephone}
               onChange={handleChange}
+              onFocus={handleFocus}
               placeholder="رقم الهاتف"
-              className={`w-full p-4 bg-gray-100 border-none rounded-2xl text-right outline-none focus:ring-2 ${errors.telephone ? "ring-2 ring-red-500" : "focus:ring-red-500"}`}
+              className={`w-full p-4 bg-gray-100 rounded-2xl text-right outline-none text-[16px] transition-all ${
+                errors.telephone
+                  ? "ring-2 ring-red-500 bg-red-50"
+                  : "focus:ring-2 focus:ring-red-500"
+              }`}
             />
             {errors.telephone && (
-              <p className="text-red-500 text-sm mt-1 font-bold">
+              <p className="text-red-500 text-xs mt-1 pr-2 font-bold animate-bounce-short">
                 {errors.telephone}
               </p>
             )}
           </div>
 
-          {/* حقل المحل */}
+          {/* المحل */}
           <div>
             <input
               type="text"
               name="magasin"
               value={formData.magasin}
               onChange={handleChange}
+              onFocus={handleFocus}
               placeholder="اسم المحل"
-              className={`w-full p-4 bg-gray-100 border-none rounded-2xl text-right outline-none focus:ring-2 ${errors.magasin ? "ring-2 ring-red-500" : "focus:ring-red-500"}`}
+              className={`w-full p-4 bg-gray-100 rounded-2xl text-right outline-none text-[16px] transition-all ${
+                errors.magasin
+                  ? "ring-2 ring-red-500"
+                  : "focus:ring-2 focus:ring-red-500"
+              }`}
             />
             {errors.magasin && (
-              <p className="text-red-500 text-sm mt-1 font-bold">
+              <p className="text-red-500 text-xs mt-1 pr-2 font-bold">
                 {errors.magasin}
               </p>
             )}
           </div>
 
-          {/* حقل الولاية */}
+          {/* الولاية */}
           <div>
             <input
               type="text"
               name="ville"
               value={formData.ville}
               onChange={handleChange}
+              onFocus={handleFocus}
               placeholder="الولاية"
-              className={`w-full p-4 bg-gray-100 border-none rounded-2xl text-right outline-none focus:ring-2 ${errors.ville ? "ring-2 ring-red-500" : "focus:ring-red-500"}`}
+              className={`w-full p-4 bg-gray-100 rounded-2xl text-right outline-none text-[16px] transition-all ${
+                errors.ville
+                  ? "ring-2 ring-red-500"
+                  : "focus:ring-2 focus:ring-red-500"
+              }`}
             />
             {errors.ville && (
-              <p className="text-red-500 text-sm mt-1 font-bold">
+              <p className="text-red-500 text-xs mt-1 pr-2 font-bold">
                 {errors.ville}
               </p>
             )}
           </div>
 
+          {/* Social */}
+          <div className="bg-gray-50 p-4 rounded-3xl border-2 border-dashed border-gray-200">
+            <p className="text-center text-sm font-bold mb-3 text-gray-600">
+              تابعنا لتفعيل العجلة 👇
+            </p>
+
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() =>
+                  handleSocialClick(
+                    "facebook",
+                    "https://www.facebook.com/Afrique.Lubrifiant/",
+                  )
+                }
+                className={`flex items-center justify-center gap-2 p-3 rounded-xl transition-all ${
+                  socialCheck.facebook
+                    ? "bg-green-600 text-white shadow-md"
+                    : "bg-[#1877f2] text-white"
+                }`}
+              >
+                <i
+                  className={`pi ${
+                    socialCheck.facebook ? "pi-check-circle" : "pi-facebook"
+                  }`}
+                ></i>
+                <span className="text-xs font-bold">
+                  {socialCheck.facebook ? "تمت المتابعة" : "فيسبوك"}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  handleSocialClick(
+                    "instagram",
+                    "https://www.instagram.com/afrilubtunisie/",
+                  )
+                }
+                className={`flex items-center justify-center gap-2 p-3 rounded-xl transition-all ${
+                  socialCheck.instagram
+                    ? "bg-green-600 text-white shadow-md"
+                    : "bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] text-white"
+                }`}
+              >
+                <i
+                  className={`pi ${
+                    socialCheck.instagram ? "pi-check-circle" : "pi-instagram"
+                  }`}
+                ></i>
+                <span className="text-xs font-bold">
+                  {socialCheck.instagram ? "تمت المتابعة" : "إنستغرام"}
+                </span>
+              </button>
+            </div>
+
+            {errors.social && (
+              <p className="text-red-500 text-center text-xs mt-3 font-bold">
+                {errors.social}
+              </p>
+            )}
+          </div>
+
+          {/* Submit */}
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-[#E11D48] text-white text-xl font-bold py-4 rounded-2xl mt-4 shadow-lg active:scale-95 transition-transform disabled:opacity-50"
+            className="w-full bg-[#E11D48] text-white text-xl font-bold py-4 rounded-2xl mt-4 shadow-lg active:scale-95 transition-all disabled:opacity-50"
           >
             {isLoading ? "جاري التحقق..." : "تأكيد و تدوير العجلة"}
           </button>

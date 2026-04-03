@@ -12,7 +12,7 @@ const Documentation = () => {
 
                         <h5>Getting Started</h5>
                         <p>
-                            Sakai is an application template for React based on the popular{' '}
+                            Valvoline is an application template for React based on the popular{' '}
                             <a href="https://nextjs.org/" className="font-medium hover:underline text-primary">
                                 Next.js
                             </a>{' '}
@@ -21,7 +21,7 @@ const Documentation = () => {
                                 App Router
                             </a>
                             . To get started, clone the{' '}
-                            <a href="https://github.com/primefaces/sakai-react" className="font-medium hover:underline text-primary">
+                            <a href="https://github.com/primefaces/Valvoline-react" className="font-medium hover:underline text-primary">
                                 repository
                             </a>{' '}
                             from GitHub and install the dependencies with npm or yarn.
@@ -31,7 +31,7 @@ const Documentation = () => {
                         </pre>
 
                         <p>
-                            Next step is running the application using the start script and navigate to <b>http://localhost:3000/</b> to view the application. That is it, you may now start with the development of your application using the Sakai
+                            Next step is running the application using the start script and navigate to <b>http://localhost:3000/</b> to view the application. That is it, you may now start with the development of your application using the Valvoline
                             template.
                         </p>
 
@@ -40,7 +40,7 @@ const Documentation = () => {
                         </pre>
 
                         <h5>Dependencies</h5>
-                        <p>Dependencies of Sakai are listed below and needs to be defined at package.json.</p>
+                        <p>Dependencies of Valvoline are listed below and needs to be defined at package.json.</p>
 
                         <pre className="app-code">
                             <code>{`"primereact": "^9.6.2",                    //required: PrimeReact components
@@ -50,7 +50,7 @@ const Documentation = () => {
                         </pre>
 
                         <h5>Structure</h5>
-                        <p>Sakai consist of a couple of folders where demos and core layout have been separated.</p>
+                        <p>Valvoline consist of a couple of folders where demos and core layout have been separated.</p>
                         <p>
                             There are two{' '}
                             <a href="https://nextjs.org/docs/app/building-your-application/routing/route-groups" className="font-medium hover:underline text-primary">
@@ -136,7 +136,7 @@ interface MainLayoutProps {
 }
 
 export const metadata: Metadata = {
-    title: "Sakai by PrimeReact | Free Admin Template for Next.js",
+    title: "Valvoline by PrimeReact | Free Admin Template for Next.js",
     ...
   };
 
@@ -161,7 +161,7 @@ interface FullPageLayoutProps {
 }
 
 export const metadata: Metadata = {
-    title: "Sakai by PrimeReact | Free Admin Template for Next.js",
+    title: "Valvoline by PrimeReact | Free Admin Template for Next.js",
     ...
   };
 
@@ -212,7 +212,7 @@ export const LayoutProvider = (props) => {
 
                         <h5>PrimeReact Theme</h5>
                         <p>
-                            Sakai theming is based on the PrimeReact theme being used.
+                            Valvoline theming is based on the PrimeReact theme being used.
                         </p>
 
                         <h5>SASS Variables</h5>
